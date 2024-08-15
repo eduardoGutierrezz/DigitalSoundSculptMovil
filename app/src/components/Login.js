@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, Pressable, TouchableWithoutFeedback, Keyboard } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Pressable, TouchableWithoutFeedback, Keyboard, Alert } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const Login = ({ setModalVisible, setScreen }) => {
+const Login = ({ setScreen }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isFocused, setIsFocused] = useState({
@@ -16,7 +17,9 @@ const Login = ({ setModalVisible, setScreen }) => {
     }
 
     try {
-      const response = await fetch('https://tuservidor.com/api/login', {
+      console.log('Enviando datos:', { email, password });
+
+      const response = await fetch('http://192.168.1.70:3000/api/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -27,19 +30,23 @@ const Login = ({ setModalVisible, setScreen }) => {
         }),
       });
 
+      console.log('Response status:', response.status);
+
       const data = await response.json();
+      console.log('Response data:', data);
 
       if (response.ok) {
-        // Si la autenticación es exitosa
-        // await AsyncStorage.setItem('userToken', data.token); // Guardar el token si usas JWT
-        setScreen('home'); // Navegar a la pantalla de inicio
+        await AsyncStorage.setItem('userToken', data.token);
+        setScreen('home');
       } else {
         Alert.alert('Error', data.message || 'Credenciales incorrectas.');
       }
     } catch (error) {
+      console.error('Fetch error:', error);
       Alert.alert('Error', 'Hubo un problema con la conexión. Por favor intenta nuevamente.');
     }
   };
+
   const handleFocus = (field) => {
     setIsFocused({ ...isFocused, [field]: true });
   };
@@ -52,7 +59,7 @@ const Login = ({ setModalVisible, setScreen }) => {
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <View style={styles.container}>
         <Text style={styles.title}>Accede a tu cuenta</Text>
-        <Text style={styles.textInput}>Usuario</Text>
+        <Text style={styles.textInput}>Correo electrónico</Text>
         <TextInput
           style={[styles.input, isFocused.email && styles.inputFocused]}
           placeholder="Email"
@@ -67,7 +74,7 @@ const Login = ({ setModalVisible, setScreen }) => {
         <Text style={styles.textInput}>Contraseña</Text>
         <TextInput
           style={[styles.input, isFocused.password && styles.inputFocused]}
-          placeholder="Password"
+          placeholder="Contraseña"
           placeholderTextColor="#D2D2D2"
           selectionColor="#FF7B32"
           value={password}
@@ -76,7 +83,7 @@ const Login = ({ setModalVisible, setScreen }) => {
           onFocus={() => handleFocus('password')}
           onBlur={() => handleBlur('password')}
         />
-        <Pressable onPress={() => setScreen('home')} style={styles.btn}>
+        <Pressable onPress={handleLogin} style={styles.btn}>
           <Text style={styles.btnText}>Iniciar sesión</Text>
         </Pressable>
         <View style={styles.buttonContainer}>
@@ -92,10 +99,6 @@ const Login = ({ setModalVisible, setScreen }) => {
   );
 };
 
-
-// Exportar el componente de LoginScreen como default
-export default Login;
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -104,11 +107,10 @@ const styles = StyleSheet.create({
   },
   title: {
     fontWeight: 'bold',
-    marginLeft:60,
+    marginLeft: 60,
     fontSize: 22,
-    marginBottom:20,
+    marginBottom: 20,
     color: '#666464',
-    
   },
   textInput: {
     fontSize: 16,
@@ -123,14 +125,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 5,
-    backgroundColor:'white'
+    backgroundColor: 'white',
   },
   inputFocused: {
     borderColor: '#FF7B32',
     borderWidth: 2,
   },
   btn: {
-    backgroundColor: '#1663B6', // #FF7B32
+    backgroundColor: '#1663B6',
     padding: 10,
     marginTop: 20,
     marginLeft: 70,
@@ -156,3 +158,5 @@ const styles = StyleSheet.create({
     color: '#1663B6',
   },
 });
+
+export default Login;

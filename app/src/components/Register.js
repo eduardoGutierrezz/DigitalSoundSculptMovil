@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, Pressable, TouchableWithoutFeedback, Keyboard, Alert } from 'react-native';
-import FontAwesome from 'react-native-vector-icons/FontAwesome'; // Importa FontAwesome
+import FontAwesome from 'react-native-vector-icons/FontAwesome';
 
 const Register = ({ setScreen }) => {
   const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [serialNumber, setSerialNumber] = useState(''); // Nuevo estado para el número de serie
-  const [isSerialValid, setIsSerialValid] = useState(false); // Nuevo estado para validación del número de serie
+  const [serialNumber, setSerialNumber] = useState('');
+  const [isSerialValid, setIsSerialValid] = useState(false);
 
   const [isFocused, setIsFocused] = useState({
     nombre: false,
@@ -39,8 +39,8 @@ const Register = ({ setScreen }) => {
     }
   };
 
-  const handleSignup = () => {
-    if (!nombre || !email|| !serialNumber || !password || !confirmPassword) {
+  const handleSignup = async () => {
+    if (!nombre || !email || !password || !confirmPassword) {
       Alert.alert('Error', 'Por favor completa todos los campos');
       return;
     }
@@ -50,24 +50,46 @@ const Register = ({ setScreen }) => {
       return;
     }
 
-    if (!isSerialValid) { // Verifica la validez del número de serie
+    if (!isSerialValid) {
       Alert.alert('Error', 'Número de serie inválido');
       return;
     }
 
-    Alert.alert(
-      'Registro Completo',
-      'Te has registrado exitosamente.',
-      [{ text: 'OK', onPress: () => setScreen('usuario') }],
-      { cancelable: false }
-    );
+    try {
+      const response = await fetch('http://192.168.1.70:3000/api/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          nombre: nombre,
+          email: email,
+          password: password,
+        }),
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        Alert.alert(
+          'Registro Completo',
+          'Te has registrado exitosamente.',
+          [{ text: 'OK', onPress: () => setScreen('usuario') }],
+          { cancelable: false }
+        );
+      } else {
+        Alert.alert('Error', data.message || 'Hubo un problema con el registro.');
+      }
+    } catch (error) {
+      console.error('Fetch error:', error);
+      Alert.alert('Error', 'Hubo un problema con la conexión. Por favor intenta nuevamente.');
+    }
   };
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <View style={styles.container}>
         <Text style={styles.title}>Registro</Text>
-        
+
         <Text style={styles.textInput}>Nombre</Text>
         <TextInput
           style={[styles.input, isFocused.nombre && styles.inputFocused]}
@@ -79,7 +101,7 @@ const Register = ({ setScreen }) => {
           onBlur={() => handleBlur('nombre')}
         />
 
-<Text style={styles.textInput}>Correo</Text>
+        <Text style={styles.textInput}>Correo</Text>
         <TextInput
           style={[styles.input, isFocused.email && styles.inputFocused]}
           placeholder="Email"
@@ -92,7 +114,7 @@ const Register = ({ setScreen }) => {
           onBlur={() => handleBlur('email')}
         />
 
-<Text style={styles.textInput}>Contraseña</Text>
+        <Text style={styles.textInput}>Contraseña</Text>
         <TextInput
           style={[styles.input, isFocused.password && styles.inputFocused]}
           placeholder="Password"
@@ -104,7 +126,7 @@ const Register = ({ setScreen }) => {
           onBlur={() => handleBlur('password')}
         />
 
-<Text style={styles.textInput}>Confirmar contraseña</Text>
+        <Text style={styles.textInput}>Confirmar contraseña</Text>
         <TextInput
           style={[styles.input, isFocused.confirmPassword && styles.inputFocused]}
           placeholder="Password"
@@ -116,13 +138,13 @@ const Register = ({ setScreen }) => {
           onBlur={() => handleBlur('confirmPassword')}
         />
 
-<Text style={styles.textInput}>Serial</Text>
+        <Text style={styles.textInput}>Serial</Text>
         <TextInput
           style={[styles.input, isFocused.serialNumber && styles.inputFocused]}
           placeholder="Número de Serie"
           placeholderTextColor="#D2D2D2"
           value={serialNumber}
-          onChangeText={validateSerialNumber} // Validar automáticamente al cambiar el texto
+          onChangeText={validateSerialNumber}
           keyboardType="numeric"
           onFocus={() => handleFocus('serialNumber')}
           onBlur={() => handleBlur('serialNumber')}
@@ -149,18 +171,17 @@ const Register = ({ setScreen }) => {
 };
 
 const styles = StyleSheet.create({
- container: {
+  container: {
     flex: 1,
+    justifyContent: 'center',
     backgroundColor: '#FAF5F1',
   },
   title: {
     fontWeight: 'bold',
-    marginLeft:60,
+    marginLeft: 60,
     fontSize: 22,
-    marginTop:135,
-    marginBottom:20,
+    marginBottom: 20,
     color: '#666464',
-    
   },
   textInput: {
     fontSize: 16,
@@ -175,52 +196,48 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 5,
-    backgroundColor:'white'
+    backgroundColor: 'white',
   },
-
   inputFocused: {
     borderColor: '#FF7B32',
     borderWidth: 2,
   },
-  link: {
-    color: 'blue',
-    marginTop: 10,
-  },
-  buttonContainer: {
-    marginTop: 20,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '50%', // Ajusta el ancho según sea necesario
-  },
   btn: {
-    backgroundColor: '#1663B6', //#FF7B32
+    backgroundColor: '#1663B6',
     padding: 10,
-    marginLeft:45,
+    marginTop: 20,
+    marginLeft: 70,
+    marginRight: 70,
+    marginHorizontal: 20,
     borderRadius: 10,
   },
   btnText: {
-    padding: 2,
     color: '#FFF',
     textAlign: 'center',
     fontSize: 16,
     fontWeight: 'bold',
   },
-  txtBtnContainer:{
-    color: '#1663B6',
+  buttonContainer: {
+    marginTop: 20,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '70%',
+    alignSelf: 'center',
+  },
+  txtBtnContainer: {
     fontSize: 13,
-    marginLeft:55,
+    color: '#1663B6',
   },
   successContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginLeft: 60,
     marginTop: 10,
-    marginLeft:60,
-   
   },
   successMessage: {
-    marginLeft:10,
     fontSize: 16,
     color: 'green',
+    marginLeft: 10,
   },
 });
 

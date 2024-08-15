@@ -8,6 +8,9 @@ import Perfil from './src/components/Perfil';
 import EditProfile from './src/components/EditProfile';
 import RecuperarContrasena from './src/components/RecuperarContrasena';
 
+// Ruta correcta para la imagen
+import logo from '../assets/images/minilogo.png';
+
 const Index = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [screen, setScreen] = useState('welcome'); // Estado para controlar la pantalla visible
@@ -22,17 +25,16 @@ const Index = () => {
         return <Usuario setScreen={setScreen} />;
       case 'home':
         return <Home setScreen={setScreen} />;
-        case 'perfil':
+      case 'perfil':
         return <Perfil setScreen={setScreen} />;
-        case 'edit':
-          return <EditProfile setScreen={setScreen} />;
-          case 'recuperacion':
-            return <RecuperarContrasena setScreen={setScreen} />;
-      
+      case 'edit':
+        return <EditProfile setScreen={setScreen} />;
+      case 'recuperacion':
+        return <RecuperarContrasena setScreen={setScreen} />;
       default:
         return (
           <SafeAreaView style={styles.container}>
-            <Image source={'../assets/images/minilogo-sNegro.png'} style={styles.logo} />
+            <Image source={logo} style={styles.logo} />
             <Text style={styles.titulo}>Bienvenido</Text>
             <Pressable onPress={() => setScreen('login')} style={styles.btnComenzar}>
               <Text style={styles.btnTextoComenzar}>Comenzar</Text>
@@ -53,7 +55,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#000000',
-
   },
   logo: {
     width: 150, // Ancho de la imagen
@@ -67,7 +68,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   btnComenzar: {
-    backgroundColor: '#1663B6', //#FF7B32
+    backgroundColor: '#1663B6', // #FF7B32
     padding: 10,
     marginTop: 20,
     marginHorizontal: 100,
@@ -79,7 +80,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
-
 });
 
 export default Index;
