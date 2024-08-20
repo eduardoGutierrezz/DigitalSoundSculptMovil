@@ -1,19 +1,56 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, Pressable, StyleSheet, Modal, Animated, TouchableOpacity } from 'react-native';
-import { Dropdown } from 'react-native-element-dropdown';
+import { View, Text, Pressable, StyleSheet, Modal, Animated, TouchableOpacity, TextInput, Button, Switch, Alert, Image } from 'react-native';
+import axios from 'axios';
+import logo3 from '../../../assets/images/Aiudaaaa.jpg';
 
-const presets = [
-    { label: "Preset 1", value: "preset1" },
-    { label: "Preset 2", value: "preset2" },
-    { label: "Preset 3", value: "preset3" },
-    { label: "Preset 4", value: "preset4" },
-  ];
+//Ejecutar el programa con npx expo start y en otra terminal node server.js
 
-const HomeScreen = ({ setScreen }) => {
-
-    const [selectedPreset, setSelectedPreset] = useState('');
+export default function HomeScreen({ setScreen }) {
+  const [ip, setIp] = useState('');
+  const [connected, setConnected] = useState(false);
+  const [presets, setPresets] = useState({
+    preset1: false,
+    preset2: false,
+    preset3: false,
+    preset4: false,
+    preset5: false,
+  });
+  const [selectedPreset, setSelectedPreset] = useState('');
   const [isSidebarVisible, setSidebarVisible] = useState(false);
   const slideAnim = useRef(new Animated.Value(-250)).current; // Valor inicial fuera de la pantalla
+
+  const connectDevice = () => {
+    if (ip) {
+      setConnected(true);
+      Alert.alert("Conectado", `Conectado al dispositivo con IP ${ip}`);
+    } else {
+      Alert.alert("Error", "Por favor, ingrese una IP válida.");
+    }
+  };
+
+  const disconnectDevice = () => {
+    setConnected(false);
+    Alert.alert("Desconectado", "Se ha desconectado del dispositivo");
+  };
+
+  const togglePreset = (presetName) => {
+    if (connected) {
+      axios.get(`http://${ip}/?preset=${presetName.slice(-1)}`)
+        .then(response => {
+          setPresets(prevPresets => ({
+            ...prevPresets,
+            [presetName]: !prevPresets[presetName],
+          }));
+          Alert.alert(`Preset ${presetName}`, `Se ha cambiado el preset ${presetName}`);
+        })
+        .catch(error => {
+          console.error(error);
+          Alert.alert("Error", "No se pudo enviar el comando al ESP32");
+        });
+    } else {
+      Alert.alert("Error", "No estás conectado al ESP32");
+    }
+  };
 
   const toggleSidebar = () => {
     if (isSidebarVisible) {
@@ -39,15 +76,22 @@ const HomeScreen = ({ setScreen }) => {
     }
   };
 
+  const dropdownData = Object.keys(presets).map(preset => ({
+    label: preset.charAt(0).toUpperCase() + preset.slice(1),
+    value: preset,
+  }));
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Bienvenido Madafaker</Text>
+      <Image source={logo3} style={styles.backgroundImage} />
+      <Text style={styles.title}>Bienvenido a DSS</Text>
 
       <Pressable onPress={toggleSidebar} style={styles.sidebarButton}>
         <Text style={styles.sidebarButtonText}>☰</Text>
       </Pressable>
 
       <Modal visible={isSidebarVisible} transparent={true} animationType="none">
+      
         <TouchableOpacity style={styles.overlay} onPress={toggleSidebar}>
           <Animated.View style={[styles.sidebar, { transform: [{ translateX: slideAnim }] }]}>
             <Text style={styles.sidebarTitle}>Perfil</Text>
@@ -64,35 +108,41 @@ const HomeScreen = ({ setScreen }) => {
         </TouchableOpacity>
       </Modal>
 
-      <View style={styles.campo}>
-        <Text style={styles.label}>Presets</Text>
-        <Dropdown
-          data={presets}
-          labelField="label"
-          valueField="value"
-          placeholder="Selecciona un preset"
-          value={selectedPreset}
-          onChange={(item) => setSelectedPreset(item.value)}
-          style={styles.dropdown}
-          selectedTextStyle={styles.selectedTextStyle}
-          placeholderStyle={styles.placeholderStyle}
+      <View style={styles.inputContainer}>
+        <Text style={styles.label}>IP Equipo:</Text>
+        <TextInput
+          style={[styles.input, styles.inputFocused]}
+          placeholder="Ingrese la IP del equipo"
+          value={ip}
+          onChangeText={setIp}
         />
+        <Button style={styles.btn} title="Conectar Equipo" onPress={connectDevice} disabled={connected} />
+        <Button title="Desconectar Equipo" onPress={disconnectDevice} disabled={!connected} />
       </View>
 
-      <Pressable onPress={handleAction} style={styles.btn}>
-        <Text style={styles.btnText}>Activar preset</Text>
-      </Pressable>
+      {Object.keys(presets).map((preset) => (
+        <View key={preset} style={styles.switchContainer}>
+          <Text>{preset.toUpperCase()}</Text>
+          <Switch
+            onValueChange={() => togglePreset(preset)}
+            value={presets[preset]}
+          />
+        </View>
+      ))}
+
     </View>
   );
-};
-
-export default HomeScreen;
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
-    backgroundColor: '#FAF5F1',
+    backgroundColor: '#EBEAF0',
+  },
+  backgroundImage: {
+    ...StyleSheet.absoluteFillObject, // Esto hace que la imagen cubra todo el contenedor
+    resizeMode: 'cover', // Ajusta el tamaño de la imagen para cubrir todo el contenedor
   },
   title: {
     fontWeight: 'bold',
@@ -101,16 +151,30 @@ const styles = StyleSheet.create({
     color: '#666464',
     textAlign: 'center',
   },
-  campo: {
+  inputContainer: {
     width: '80%',
     alignSelf: 'center',
     marginTop: 30,
     color: '#666464',
+    
   },
   label: {
     fontSize: 16,
     marginBottom: 10,
     color: '#666464',
+  },
+  input: {
+    height: 40,
+    borderColor: 'gray',
+    borderWidth: 1,
+    marginBottom: 20,
+    paddingLeft: 10,
+    backgroundColor: 'white',
+    borderColor: '#ccc',
+  },
+  inputFocused: {
+    borderColor: '#FF7B32',
+    borderWidth: 2,
   },
   dropdown: {
     height: 50,
@@ -118,7 +182,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 5,
     padding: 10,
-    backgroundColor:'white'
+    backgroundColor: 'white',
   },
   selectedTextStyle: {
     color: '#666464',
@@ -138,6 +202,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 16,
     fontWeight: 'bold',
+    
   },
   sidebarButton: {
     position: 'absolute',
@@ -167,7 +232,7 @@ const styles = StyleSheet.create({
     top: 0,
   },
   sidebarTitle: {
-    paddingTop:80,
+    paddingTop: 80,
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 20,
@@ -178,5 +243,13 @@ const styles = StyleSheet.create({
   sidebarItemText: {
     fontSize: 16,
     color: '#1663B6',
+  },
+  switchContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
   },
 });

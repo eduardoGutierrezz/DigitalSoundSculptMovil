@@ -1,8 +1,43 @@
-import React, { useState, useRef } from 'react';
-import { View, Text, Pressable, StyleSheet, Modal, Animated, TouchableOpacity, Image, Platform } from 'react-native';
-const Perfil = ({ setScreen,userInfo }) => {
+import React, { useState, useRef, useEffect } from 'react';
+import { View, Text, Pressable, StyleSheet, Modal, Animated, TouchableOpacity, Image } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
+import logo3 from '../../../assets/images/Aiudaaaa.jpg';
+
+const Perfil = ({ setScreen }) => {
   const [isSidebarVisible, setSidebarVisible] = useState(false);
+  const [userInfo, setUserInfo] = useState(null);
   const slideAnim = useRef(new Animated.Value(-250)).current; // Valor inicial fuera de la pantalla
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const token = await AsyncStorage.getItem('userToken'); // Obtener el token almacenado
+        
+        if (token) {
+          const response = await axios.get('http://192.168.0.192:3000/api/profile', {//Cambiar la ruta segun la conexion de internet, entrar a CMD y poner ipConfig para conocer la ruta correcta.
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+          });
+
+          // Verificar y ajustar la estructura de los datos según la respuesta
+          console.log(response.data); // Verificar datos
+          if (response.data) {
+            setUserInfo(response.data);
+          } else {
+            console.warn('Datos del perfil no encontrados.');
+          }
+        } else {
+          console.warn('No se encontró el token.');
+        }
+      } catch (error) {
+        console.error('Error al obtener la información del perfil:', error);
+      }
+    };
+
+    fetchProfile();
+  }, []);
 
   const toggleSidebar = () => {
     if (isSidebarVisible) {
@@ -23,7 +58,7 @@ const Perfil = ({ setScreen,userInfo }) => {
 
   return (
     <View style={styles.container}>
-      
+      <Image source={logo3} style={styles.backgroundImage} />
       <Pressable onPress={toggleSidebar} style={styles.sidebarButton}>
         <Text style={styles.sidebarButtonText}>☰</Text>
       </Pressable>
@@ -49,29 +84,28 @@ const Perfil = ({ setScreen,userInfo }) => {
 
       <View style={styles.profileInfo}>
         <Text style={styles.infoTitle}>Nombre:</Text>
-        <Text style={styles.infoText}>{userInfo?.nombre || 'No disponible'}</Text>
-        <Text style={styles.infoTitle}>Apellido:</Text>
-        <Text style={styles.infoText}>{userInfo?.apellido || 'No disponible'}</Text>
+        <Text style={styles.infoText}>{userInfo?.name || 'No disponible'}</Text>
+        <Text style={styles.infoTitle}>Email:</Text>
+        <Text style={styles.infoText}>{userInfo?.email || 'No disponible'}</Text>
         <Text style={styles.infoTitle}>País:</Text>
-        <Text style={styles.infoText}>{userInfo?.pais || 'No disponible'}</Text>
+        <Text style={styles.infoText}>{userInfo?.location || 'No disponible'}</Text>
         <Text style={styles.infoTitle}>Género musical:</Text>
-        <Text style={styles.infoText}>{userInfo?.genero || 'No disponible'}</Text>
+        <Text style={styles.infoText}>{userInfo?.generoMusical || 'No disponible'}</Text>
         <Text style={styles.infoTitle}>Fecha de Nacimiento:</Text>
-        <Text style={styles.infoText}>{userInfo?.fechaNacimiento || 'No disponible'}</Text>
+        <Text style={styles.infoText}>{userInfo?.birthdate || 'No disponible'}</Text>
       </View>
+      
       <View style={styles.buttonContainer}>
-          <Pressable onPress={() => setScreen('home')}>
-            <Text style={styles.txtBtnContainer}>Volver</Text>
-          </Pressable>
-          <Pressable onPress={() => setScreen('edit')} style={styles.btn}>
-            <Text style={styles.btnText}>Actualizar</Text>
-          </Pressable>
-        </View>
+        <Pressable onPress={() => setScreen('home')}>
+          <Text style={styles.txtBtnContainer}>Volver</Text>
+        </Pressable>
+        <Pressable onPress={() => setScreen('edit')} style={styles.btn}>
+          <Text style={styles.btnText}>Actualizar</Text>
+        </Pressable>
+      </View>
     </View>
   );
 };
-
-export default Perfil;
 
 const styles = StyleSheet.create({
   container: {
@@ -79,14 +113,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: '#FAF5F1',
   },
+  backgroundImage: {
+    ...StyleSheet.absoluteFillObject, // Esto hace que la imagen cubra todo el contenedor
+    resizeMode: 'cover', // Ajusta el tamaño de la imagen para cubrir todo el contenedor
+  },
   title: {
     fontWeight: 'bold',
-    marginLeft:60,
+    marginLeft: 60,
     fontSize: 22,
-    marginTop:50,
-    marginBottom:20,
+    marginTop: 50,
+    marginBottom: 20,
     color: '#666464',
-    
   },
   sidebarButton: {
     position: 'absolute',
@@ -124,13 +161,12 @@ const styles = StyleSheet.create({
   sidebarItem: {
     marginBottom: 20,
   },
-  sidebarItemText:{
+  sidebarItemText: {
     fontSize: 16,
     color: '#1663B6',
   },
-  profileInfo:{
+  profileInfo: {
     marginLeft: 60,
-    
   },
   infoTitle: {
     fontWeight: 'bold',
@@ -138,30 +174,27 @@ const styles = StyleSheet.create({
     marginBottom: 5,
     marginTop: 5,
     color: '#666464',
-},
-infoText: {
+  },
+  infoText: {
     color: '#666464',
-    paddingVertical:10,
+    paddingVertical: 10,
     fontSize: 16,
-
   },
   buttonContainer: {
-    alignItems:'center',
-    padding:10,
+    alignItems: 'center',
+    padding: 10,
   },
-
-  txtBtnContainer:{
-    padding:10,
+  txtBtnContainer: {
+    padding: 10,
     fontSize: 16,
     color: '#1663B6',
   },
-
   btn: {
     backgroundColor: '#1663B6', //#FF7B32
     padding: 10,
     borderRadius: 10,
-    paddingHorizontal:30,
-    marginTop:10
+    paddingHorizontal: 30,
+    marginTop: 10,
   },
   btnText: {
     color: '#FFF',
@@ -170,3 +203,5 @@ infoText: {
     fontWeight: 'bold',
   },
 });
+
+export default Perfil;

@@ -28,10 +28,10 @@ db.connect(err => {
 
 // Endpoint de registro
 app.post('/api/register', async (req, res) => {
-  const { nombre, email, password } = req.body;
+  const { nombre, email, password, birthdate, location, generoMusical, preset } = req.body;
 
-  if (!nombre || !email || !password) {
-    return res.status(400).json({ message: 'Por favor ingresa tu nombre, correo electrónico y contraseña.' });
+  if (!nombre || !email || !password || !birthdate || !location || !generoMusical || !preset) {
+    return res.status(400).json({ message: 'Por favor ingresa todos los datos.' });
   }
 
   try {
@@ -39,7 +39,7 @@ app.post('/api/register', async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Guardar el usuario en la base de datos con la contraseña encriptada
-    db.query('INSERT INTO usuarios (name, email, password) VALUES (?, ?, ?)', [nombre, email, hashedPassword], (err, results) => {
+    db.query('INSERT INTO usuarios (name, email, password, birthdate, location, generoMusical, presets) VALUES (?, ?, ?, ?, ?, ?, ?)', [nombre, email, hashedPassword, birthdate, location, generoMusical, preset], (err, results) => {
       if (err) {
         console.error('Error al guardar el usuario en la base de datos:', err);
         return res.status(500).json({ message: 'Error al guardar el usuario en la base de datos.' });
@@ -51,6 +51,44 @@ app.post('/api/register', async (req, res) => {
     res.status(500).json({ message: 'Error al encriptar la contraseña.' });
   }
 });
+
+  // Middleware para verificar el token JWT//////////////////////////////////////////////////////////////////////////////////////////////////
+const verifyToken = (req, res, next) => {
+  const token = req.headers['authorization'];
+  if (!token) {
+    return res.status(403).json({ message: 'No token provided.' });
+  }
+
+  const jwtSecret = process.env.JWT_SECRET || 'tu_clave_secreta';
+  jwt.verify(token.split(' ')[1], jwtSecret, (err, decoded) => {
+    if (err) {
+      return res.status(500).json({ message: 'Failed to authenticate token.' });
+    }
+    req.userId = decoded.id;
+    next();
+  });
+};
+
+// Endpoint para obtener el perfil del usuario
+app.get('/api/profile', verifyToken, (req, res) => {
+  const userId = req.userId;
+
+  db.query('SELECT name, email, birthdate, location, generoMusical FROM usuarios WHERE id = ?', [userId], (err, results) => {
+
+
+    if (err) {
+      console.error('Error en la consulta a la base de datos:', err);
+      return res.status(500).json({ message: 'Error en la consulta a la base de datos.' });
+    }
+
+    if (results.length === 0) {
+      return res.status(404).json({ message: 'Usuario no encontrado.' });
+    }
+
+    res.json(results[0]);
+  });
+});
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Endpoint de inicio de sesión
 app.post('/api/login', (req, res) => {

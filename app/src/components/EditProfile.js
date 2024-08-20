@@ -1,7 +1,8 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, Pressable, StyleSheet, Modal, Animated, TouchableOpacity, TouchableWithoutFeedback, Keyboard, TextInput, Alert } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Dropdown } from 'react-native-element-dropdown';
+import logo3 from '../../../assets/images/Aiudaaaa.jpg';
 
 const paises = [
   { label: "Argentina", value: "Argentina" },
@@ -73,11 +74,11 @@ const EditProfile = ({ setScreen, userInfo }) => {
   const [isSidebarVisible, setSidebarVisible] = useState(false);
   const slideAnim = useRef(new Animated.Value(-250)).current;
 
-  const [nombre, setNombre] = useState(userInfo?.nombre || '');
-  const [email, setEmail] = useState(userInfo?.email || '');
-  const [selectedCountry, setSelectedCountry] = useState(userInfo?.country || '');
-  const [selectedGenre, setSelectedGenre] = useState(userInfo?.genre || '');
-  const [date, setDate] = useState(userInfo?.dateOfBirth ? new Date(userInfo.dateOfBirth) : new Date());
+  const [nombre, setNombre] = useState('');
+  const [email, setEmail] = useState('');
+  const [selectedCountry, setSelectedCountry] = useState('');
+  const [selectedGenre, setSelectedGenre] = useState('');
+  const [date, setDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [isFocused, setIsFocused] = useState({
     nombre: false,
@@ -86,6 +87,16 @@ const EditProfile = ({ setScreen, userInfo }) => {
     genero: false,
     fecha: false,
   });
+
+  useEffect(() => {
+    if (userInfo) {
+      setNombre(userInfo.nombre);
+      setEmail(userInfo.email);
+      setSelectedCountry(userInfo.country);
+      setSelectedGenre(userInfo.genre);
+      setDate(new Date(userInfo.dateOfBirth));
+    }
+  }, [userInfo]);
 
   const handleFocus = (field) => {
     setIsFocused({ ...isFocused, [field]: true });
@@ -112,13 +123,38 @@ const EditProfile = ({ setScreen, userInfo }) => {
     }
   };
 
-  const handleUpdate = () => {
-    // Update the user's profile information
-    const updatedInfo = { nombre, email, selectedCountry, selectedGenre, date };
-    // Call your update API or handle the data as needed
-    Alert.alert('Profile Updated', 'Your profile information has been updated.');
-    setScreen('perfil');
-  };
+ 
+const handleUpdate = async () => {
+  try {
+    const response = await fetch('http://192.168.0.192:3000/api/editProfile', {//Cambiar la ruta segun la conexion de internet, entrar a CMD y poner ipConfig para conocer la ruta correcta.
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        nombre,
+        email,
+        selectedCountry,
+        selectedGenre,
+        date: date.toISOString(),
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.log('Respuesta del error:', errorData);  // Agrega esta línea
+      throw new Error(errorData.message || 'Error al actualizar el perfil');
+    }
+
+    const data = await response.json();
+    // Maneja la respuesta exitosa aquí
+
+  } catch (error) {
+    console.error('Error en la solicitud:', error);
+    Alert.alert('Error', error.message || 'Ocurrió un error al actualizar el perfil.');
+  }
+};
+
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -146,34 +182,33 @@ const EditProfile = ({ setScreen, userInfo }) => {
           </TouchableOpacity>
         </Modal>
 
+        <View style={styles.campo}>
+          <Text style={styles.label}>Nombre</Text>
+          <TextInput
+            style={[styles.input, isFocused.nombre && styles.inputFocused]}
+            placeholder="Nombre"
+            value={nombre}
+            onChangeText={setNombre}
+            placeholderTextColor="#D2D2D2"
+            onFocus={() => handleFocus('nombre')}
+            onBlur={() => handleBlur('nombre')}
+          />
+        </View>
 
-  <View style={styles.campo}>
-        <Text style={styles.label}>Nombre</Text>
-        <TextInput
-          style={[styles.input, isFocused.nombre && styles.inputFocused]}
-          placeholder="Nombre"
-          value={nombre}
-          onChangeText={setNombre}
-          placeholderTextColor="#D2D2D2"
-          onFocus={() => handleFocus('nombre')}
-          onBlur={() => handleBlur('nombre')}
-        />
-  </View>
-
-<View style={styles.campo}>
-<Text style={styles.label}>Correo</Text>
-        <TextInput
-          style={[styles.input, isFocused.email && styles.inputFocused]}
-          placeholder="Email"
-          placeholderTextColor="#D2D2D2"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-          onFocus={() => handleFocus('email')}
-          onBlur={() => handleBlur('email')}
-        />
-           </View>
+        <View style={styles.campo}>
+          <Text style={styles.label}>Correo</Text>
+          <TextInput
+            style={[styles.input, isFocused.email && styles.inputFocused]}
+            placeholder="Email"
+            placeholderTextColor="#D2D2D2"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            onFocus={() => handleFocus('email')}
+            onBlur={() => handleBlur('email')}
+          />
+        </View>
 
         <View style={styles.campo}>
           <Text style={styles.label}>País de origen</Text>

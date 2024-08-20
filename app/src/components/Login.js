@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, Pressable, TouchableWithoutFeedback, Keyboard, Alert } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Pressable, TouchableWithoutFeedback, Keyboard, Alert, Image } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
+import logo3 from '../../../assets/images/Aiudaaaa.jpg';
+import logo4 from '../../../assets/images/minilogo.png';
 
 const Login = ({ setScreen }) => {
   const [email, setEmail] = useState('');
@@ -15,11 +18,11 @@ const Login = ({ setScreen }) => {
       Alert.alert('Error', 'Por favor ingresa tu correo electrónico y contraseña.');
       return;
     }
-
+  
     try {
       console.log('Enviando datos:', { email, password });
-
-      const response = await fetch('http://192.168.1.70:3000/api/login', {
+  
+      const response = await fetch('http://192.168.0.192:3000/api/login', {//Cambiar la ruta segun la conexion de internet, entrar a CMD y poner ipConfig para conocer la ruta correcta.
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -29,15 +32,21 @@ const Login = ({ setScreen }) => {
           password: password,
         }),
       });
-
+  
       console.log('Response status:', response.status);
-
+  
       const data = await response.json();
       console.log('Response data:', data);
-
+  
       if (response.ok) {
-        await AsyncStorage.setItem('userToken', data.token);
-        setScreen('home');
+        // Verifica que data.token no esté vacío o undefined
+        if (data.token) {
+          await AsyncStorage.setItem('userToken', data.token);
+          console.log('Token guardado:', data.token);
+          setScreen('home');
+        } else {
+          Alert.alert('Error', 'Token no recibido.');
+        }
       } else {
         Alert.alert('Error', data.message || 'Credenciales incorrectas.');
       }
@@ -46,6 +55,7 @@ const Login = ({ setScreen }) => {
       Alert.alert('Error', 'Hubo un problema con la conexión. Por favor intenta nuevamente.');
     }
   };
+  
 
   const handleFocus = (field) => {
     setIsFocused({ ...isFocused, [field]: true });
@@ -56,8 +66,13 @@ const Login = ({ setScreen }) => {
   };
 
   return (
+    
+      
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <View style={styles.container}>
+      <Image source={logo3} style={styles.backgroundImage} />
+      <Image source={logo4} style={styles.logo4} />
+      
         <Text style={styles.title}>Accede a tu cuenta</Text>
         <Text style={styles.textInput}>Correo electrónico</Text>
         <TextInput
@@ -96,6 +111,7 @@ const Login = ({ setScreen }) => {
         </View>
       </View>
     </TouchableWithoutFeedback>
+    
   );
 };
 
@@ -103,7 +119,22 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
-    backgroundColor: '#FAF5F1',
+    backgroundColor: '#EFF0F7',
+  },
+  backgroundImage: {
+    ...StyleSheet.absoluteFillObject, // Esto hace que la imagen cubra todo el contenedor
+    resizeMode: 'cover', // Ajusta el tamaño de la imagen para cubrir todo el contenedor
+  },
+  logo3: {
+    width: 50, // Ancho de la imagen
+    height: 100,// Alto de la imagen
+  
+  },
+  logo4: {
+    width: 160, // Ancho de la imagen
+    height: 70, // Alto de la imagen
+    marginBottom: 50, // Margen inferior para separar del título
+    marginLeft:95,
   },
   title: {
     fontWeight: 'bold',
